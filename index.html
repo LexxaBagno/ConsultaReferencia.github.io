@@ -3,147 +3,173 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Consulta de Preços Ultra</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+    <title>Consulta de Vendas Pro</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body { font-family: -apple-system, sans-serif; background-color: #f0f2f5; margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
-        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 400px; box-sizing: border-box; }
+        :root { --primary: #1a73e8; --success: #28a745; --warning: #e65100; }
+        body { font-family: -apple-system, sans-serif; background-color: #f0f2f5; margin: 0; padding: 10px; display: flex; justify-content: center; }
+        .card { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 100%; max-width: 450px; box-sizing: border-box; }
         
-        /* Container da Câmera Melhorado */
-        #interactive.viewport { 
-            width: 100%; height: 300px; border-radius: 12px; overflow: hidden; 
-            background: #000; margin-bottom: 15px; display: none; position: relative; 
-            border: 3px solid #1a73e8; 
-        }
-        #interactive video, #interactive canvas { width: 100%; height: 100%; object-fit: cover; }
-        
-        /* Mira do Scanner */
-        .scanner-laser {
-            position: absolute; top: 50%; left: 10%; right: 10%; height: 2px;
-            background-color: red; box-shadow: 0 0 8px red; z-index: 10;
-            transform: translateY(-50%); display: none;
-        }
+        h2 { text-align: center; color: var(--primary); font-size: 20px; margin-bottom: 15px; }
 
-        .btn-scan { background: #28a745; color: white; width: 100%; padding: 16px; border: none; border-radius: 10px; font-weight: bold; margin-bottom: 15px; cursor: pointer; font-size: 16px; }
-        .search-row { display: flex; gap: 8px; margin-bottom: 20px; }
-        input { flex: 1; padding: 14px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; }
-        .btn-search { background: #1a73e8; color: white; border: none; padding: 0 18px; border-radius: 10px; cursor: pointer; }
-
-        .result-box { border-top: 1px solid #eee; padding-top: 20px; display: none; }
-        .prod-title { font-weight: bold; color: #333; font-size: 18px; }
-        .price-area { margin-top: 15px; padding: 20px; background: #f8f9fa; border-radius: 12px; text-align: center; }
-        .new-price { font-size: 34px; color: #2e7d32; font-weight: bold; display: block; }
+        /* Estilo dos Inputs e Selects */
+        .field-group { margin-bottom: 12px; }
+        label { font-size: 12px; font-weight: bold; color: #666; display: block; margin-bottom: 4px; }
+        select, input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; outline: none; }
         
-        /* Frase com Foguinho */
-        .discount-label { 
-            background: #fff3e0; color: #e65100; padding: 10px; border-radius: 10px; 
-            font-size: 15px; font-weight: bold; margin-top: 12px; display: inline-block; 
-            border: 1px solid #ffe0b2; 
-        }
-        .error { color: #d32f2f; text-align: center; margin-top: 10px; font-weight: bold; }
+        .search-row { display: flex; gap: 8px; }
+        .btn-search { background: var(--primary); color: white; border: none; padding: 0 20px; border-radius: 8px; cursor: pointer; }
+
+        /* Scanner */
+        #reader { width: 100%; border-radius: 10px; overflow: hidden; margin-bottom: 15px; border: none !important; }
+        .btn-scan { background: var(--success); color: white; width: 100%; padding: 15px; border: none; border-radius: 10px; font-weight: bold; font-size: 16px; margin-bottom: 15px; cursor: pointer; }
+
+        /* Resultado */
+        .result-box { border-top: 2px solid #eee; padding-top: 15px; margin-top: 10px; display: none; }
+        .prod-title { font-weight: bold; color: #333; font-size: 17px; margin-bottom: 10px; }
+        .price-card { background: #f8f9fa; padding: 15px; border-radius: 12px; text-align: center; position: relative; }
+        .old-price { text-decoration: line-through; color: #888; font-size: 14px; }
+        .new-price { font-size: 32px; color: var(--success); font-weight: bold; display: block; margin: 5px 0; }
+        
+        .discount-badge { background: #fff3e0; color: var(--warning); padding: 8px; border-radius: 8px; font-size: 14px; font-weight: bold; display: inline-block; border: 1px solid #ffe0b2; width: 100%; box-sizing: border-box; }
+        
+        .edit-discount { margin-top: 15px; display: flex; align-items: center; gap: 10px; background: #eef2f7; padding: 10px; border-radius: 8px; }
+        .edit-discount input { width: 70px; text-align: center; padding: 5px; }
+
+        .error { color: #d32f2f; text-align: center; margin-top: 10px; font-weight: bold; font-size: 14px; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <button class="btn-scan" id="btnToggle" onclick="toggleScanner()">📷 ABRIR SCANNER MELHORADO</button>
-    
-    <div id="interactive" class="viewport">
-        <div class="scanner-laser" id="laser"></div>
+    <h2>Consulta de Produto</h2>
+
+    <div class="field-group">
+        <label>FILTRAR POR GRUPO</label>
+        <select id="groupSelect" onchange="limparBusca()">
+            <option value="">Todos os Grupos</option>
+            <option value="01.001">01.001 - Misturadores</option>
+            <option value="06.007">06.007 - Cubas</option>
+        </select>
     </div>
 
-    <div class="search-row">
-        <input type="text" id="skuInput" placeholder="Digite a Referência..." onkeyup="if(event.key==='Enter') buscar()">
-        <button class="btn-search" onclick="buscar()">🔍</button>
+    <button class="btn-scan" id="scanBtn" onclick="startScanner()">📷 ABRIR CÂMERA (AUTO-FOCO)</button>
+    <div id="reader"></div>
+
+    <div class="field-group">
+        <label>REFERÊNCIA</label>
+        <div class="search-row">
+            <input type="text" id="skuInput" placeholder="Ex: LX524RG" onkeyup="if(event.key==='Enter') buscar()">
+            <button class="btn-search" onclick="buscar()">🔍</button>
+        </div>
     </div>
 
     <div id="error" class="error" style="display:none">Produto não encontrado!</div>
 
     <div id="result" class="result-box">
         <div id="prodDesc" class="prod-title"></div>
-        <div style="font-size: 15px; color: #555; margin-top:5px;">Ref: <span id="prodRef" style="font-weight:bold;"></span></div>
-        <div class="price-area">
-            <div id="precoAntigo" style="text-decoration:line-through; color: #888; font-size:14px;"></div>
+        <div style="margin-bottom: 10px; font-size: 14px;">Ref: <span id="prodRef" style="font-weight:bold;"></span></div>
+
+        <div class="price-card">
+            <span id="precoAntigo" class="old-price"></span>
             <span id="precoAtual" class="new-price"></span>
-            <div id="tagDesconto" class="discount-label" style="display:none">🔥 Referencia com 50% de desconto 🔥</div>
+            <div id="tagDesconto" class="discount-badge" style="display:none">🔥 Referencia com 50% de desconto 🔥</div>
+        </div>
+
+        <div class="edit-discount">
+            <label style="margin:0; flex:1">Ajustar Desconto (%):</label>
+            <input type="number" id="manualDiscount" value="0" oninput="recalcularPreco()">
         </div>
     </div>
 </div>
 
 <script>
+    // Base de dados vinda do arquivo
     const estoque = [
-        { g: "01.001", d: "MISTURADOR DE COZINHA BICA RETRATIL - BOOLEAN", b: "7898678205451", r: "LX3388NB", v: 2027.86 },
-        { g: "06.007", d: "CUBA CERAMICA REDONDA 36X36X12,5 - ROSE GOLD", b: "7898678205345", r: "LX524RG", v: 1007.25 }
+        { g: "01.001", d: "MISTURADOR DE COZINHA BICA RETRATIL - AÇO ESCOVADO", b: "7898678205451", r: "LX3388NB", v: 2027.86 },
+        { g: "01.001", d: "MISTURADOR DE COZINHA BICA RETRATIL - CROMADO", b: "7898678205406", r: "LX3388", v: 1848.94 },
+        { g: "06.007", d: "CUBA CERAMICA REDONDA 36X36X12,5 - ROSE GOLD", b: "7898678205345", r: "LX524RG", v: 1007.25 },
+        { g: "06.007", d: "CUBA CERAMICA REDONDA 37X37X15,5 - BRANCA", b: "7898678204744", r: "LX025", v: 371.73 },
+        { g: "06.007", d: "CUBA CERAMICA REDONDA DUAS CORES - PRETO/ROSE", b: "7898678205987", r: "LX524BRG", v: 1088.29 }
     ];
+
+    let produtoAtual = null;
+    let html5QrCode = null;
 
     function formatar(v) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 
     function buscar(codigo = null) {
         const termo = codigo || document.getElementById('skuInput').value.trim().toUpperCase();
+        const grupoFiltro = document.getElementById('groupSelect').value;
+        
         if(!termo) return;
-        const p = estoque.find(i => i.r.toUpperCase() === termo || i.b === termo);
+
+        const p = estoque.find(i => 
+            (i.r.toUpperCase() === termo || i.b === termo) && 
+            (grupoFiltro === "" || i.g === grupoFiltro)
+        );
+
         if(p) {
-            if(scannerAtivo) toggleScanner();
+            stopScanner();
+            produtoAtual = p;
             document.getElementById('error').style.display = 'none';
             document.getElementById('result').style.display = 'block';
             document.getElementById('prodDesc').innerText = p.d;
             document.getElementById('prodRef').innerText = p.r;
-            let final = p.v;
-            if(p.g.startsWith("06")) {
-                final = p.v * 0.5;
-                document.getElementById('precoAntigo').innerText = "De: " + formatar(p.v);
-                document.getElementById('tagDesconto').style.display = 'inline-block';
-            } else {
-                document.getElementById('precoAntigo').innerText = '';
-                document.getElementById('tagDesconto').style.display = 'none';
-            }
-            document.getElementById('precoAtual').innerText = formatar(final);
+            
+            // Define desconto inicial se for do grupo 06
+            const descInicial = p.g.startsWith("06") ? 50 : 0;
+            document.getElementById('manualDiscount').value = descInicial;
+            
+            recalcularPreco();
         } else {
+            document.getElementById('result').style.display = 'none';
             document.getElementById('error').style.display = 'block';
         }
     }
 
-    let scannerAtivo = false;
-    function toggleScanner() {
-        const viewer = document.getElementById('interactive');
-        const laser = document.getElementById('laser');
-        const btn = document.getElementById('btnToggle');
+    function recalcularPreco() {
+        if(!produtoAtual) return;
+        
+        const descManual = parseFloat(document.getElementById('manualDiscount').value) || 0;
+        const precoOriginal = produtoAtual.v;
+        const valorDesconto = precoOriginal * (descManual / 100);
+        const precoFinal = precoOriginal - valorDesconto;
 
-        if (!scannerAtivo) {
-            viewer.style.display = 'block';
-            laser.style.display = 'block';
-            btn.innerText = "❌ FECHAR";
-            
-            Quagga.init({
-                inputStream: {
-                    name: "Live",
-                    type: "LiveStream",
-                    target: viewer,
-                    constraints: {
-                        width: { min: 1280 },
-                        height: { min: 720 },
-                        facingMode: "environment",
-                        aspectRatio: { min: 1, max: 2 }
-                    },
-                },
-                locator: { patchSize: "medium", halfSample: false }, // Melhora precisão
-                numOfWorkers: 4,
-                decoder: { readers: ["ean_reader", "ean_8_reader", "code_128_reader"] },
-                locate: true // Ajuda a achar o código na imagem
-            }, function(err) {
-                if (err) { alert("Erro de câmera."); return; }
-                Quagga.start();
-                scannerAtivo = true;
-            });
-
-            Quagga.onDetected((res) => { if(res.codeResult.code) buscar(res.codeResult.code); });
+        if(descManual > 0) {
+            document.getElementById('precoAntigo').innerText = "De: " + formatar(precoOriginal);
+            document.getElementById('precoAtual').innerText = formatar(precoFinal);
+            document.getElementById('tagDesconto').style.display = 'block';
+            document.getElementById('tagDesconto').innerHTML = `🔥 Referencia com ${descManual}% de desconto 🔥`;
         } else {
-            Quagga.stop();
-            viewer.style.display = 'none';
-            laser.style.display = 'none';
-            btn.innerText = "📷 ABRIR SCANNER MELHORADO";
-            scannerAtivo = false;
+            document.getElementById('precoAntigo').innerText = "Preço de Venda:";
+            document.getElementById('precoAtual').innerText = formatar(precoOriginal);
+            document.getElementById('tagDesconto').style.display = 'none';
         }
+    }
+
+    function startScanner() {
+        const config = { fps: 20, qrbox: { width: 250, height: 150 } };
+        html5QrCode = new Html5Qrcode("reader");
+        
+        document.getElementById('scanBtn').style.display = 'none';
+        
+        html5QrCode.start({ facingMode: "environment" }, config, (text) => {
+            buscar(text);
+        }).catch(err => alert("Câmera não disponível"));
+    }
+
+    function stopScanner() {
+        if(html5QrCode) {
+            html5QrCode.stop().then(() => {
+                document.getElementById('scanBtn').style.display = 'block';
+            });
+        }
+    }
+
+    function limparBusca() {
+        document.getElementById('result').style.display = 'none';
+        document.getElementById('skuInput').value = "";
     }
 </script>
 </body>
