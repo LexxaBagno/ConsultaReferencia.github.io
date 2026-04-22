@@ -1,301 +1,148 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Controle de Despesas</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <style>
-    :root {
-      --bg-light: #f5f5f5;
-      --bg-dark: #1e1e2f;
-      --text-light: #000;
-      --text-dark: #f0f0f0;
-      --card-light: rgba(255,255,255,0.95);
-      --card-dark: rgba(50,50,70,0.95);
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Consulta de Preços</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+    <style>
+        body { font-family: -apple-system, system-ui, sans-serif; background-color: #f0f2f5; margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 400px; box-sizing: border-box; }
+        h2 { color: #1a73e8; text-align: center; margin-bottom: 20px; font-size: 22px; }
+        
+        /* Janela da Câmera */
+        #interactive.viewport { width: 100%; height: 250px; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 15px; display: none; position: relative; border: 2px solid #1a73e8; }
+        #interactive video, #interactive canvas { width: 100%; height: 100%; object-fit: cover; }
+        
+        .btn-scan { background: #28a745; color: white; width: 100%; padding: 16px; border: none; border-radius: 10px; font-weight: bold; margin-bottom: 15px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        
+        .search-row { display: flex; gap: 8px; margin-bottom: 20px; }
+        input { flex: 1; padding: 14px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; outline: none; }
+        input:focus { border-color: #1a73e8; }
+        .btn-search { background: #1a73e8; color: white; border: none; padding: 0 18px; border-radius: 10px; cursor: pointer; font-size: 18px; }
 
-    body {
-      font-family: Arial, sans-serif;
-      background: var(--bg-light);
-      color: var(--text-light);
-      transition: background-color 0.3s, color 0.3s;
-      margin: 0;
-      padding: 0 10px;
-    }
-
-    body.dark-mode {
-      background-color: var(--bg-dark);
-      color: var(--text-dark);
-    }
-
-    h1 {
-      text-align: center;
-      margin-top: 20px;
-    }
-
-    #themeToggle {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      z-index: 10;
-    }
-
-    .form-row {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 10px;
-      background-color: var(--card-light);
-      padding: 10px;
-      border-radius: 8px;
-    }
-
-    body.dark-mode .form-row {
-      background-color: var(--card-dark);
-    }
-
-    .form-row label {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .form-row input,
-    .form-row select {
-      flex: 1 1 150px;
-      padding: 6px;
-    }
-
-    button {
-      cursor: pointer;
-      border: none;
-      background-color: #4CAF50;
-      color: white;
-      padding: 8px 16px;
-      border-radius: 4px;
-    }
-
-    button:hover {
-      background-color: #45a049;
-    }
-
-    .button-clear {
-      background-color: #f44336;
-    }
-
-    .button-clear:hover {
-      background-color: #e53935;
-    }
-
-    .button-export {
-      background-color: #2196F3;
-    }
-
-    .button-export:hover {
-      background-color: #1976D2;
-    }
-
-    #tabela-despesas {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-      background-color: var(--card-light);
-    }
-
-    body.dark-mode #tabela-despesas {
-      background-color: var(--card-dark);
-    }
-
-    #tabela-despesas th, #tabela-despesas td {
-      padding: 8px;
-      text-align: left;
-      border-bottom: 1px solid #ddd;
-    }
-
-    #tabela-despesas tfoot td {
-      font-weight: bold;
-    }
-
-    @media (max-width: 768px) {
-      /* Cards foram removidos, mantendo o layout mobile simplificado */
-    }
-  </style>
+        .result-box { border-top: 1px solid #eee; padding-top: 20px; display: none; text-align: left; }
+        .prod-title { font-weight: bold; color: #333; margin-bottom: 8px; font-size: 18px; line-height: 1.4; }
+        .price-area { margin-top: 15px; padding: 20px; background: #f8f9fa; border-radius: 12px; text-align: center; }
+        .old-price { text-decoration: line-through; color: #888; font-size: 15px; margin-bottom: 5px; display: block; }
+        .new-price { font-size: 34px; color: #2e7d32; font-weight: bold; display: block; }
+        
+        /* Estilo da frase de desconto solicitada */
+        .discount-label { background: #fff3e0; color: #e65100; padding: 10px 15px; border-radius: 10px; font-size: 15px; font-weight: bold; margin-top: 12px; display: inline-block; border: 1px solid #ffe0b2; }
+        
+        .error { color: #d32f2f; text-align: center; margin-top: 10px; font-weight: bold; }
+    </style>
 </head>
 <body>
-  <h1><span>🛒</span> Controle de Despesas</h1>
-  <button id="themeToggle">🌙 Modo Escuro</button>
 
-  <div class="form-row">
-    <label>📂 Categoria:</label>
-    <select id="categoria">
-      <option value="">Selecione</option>
-      <option>Alimentação</option>
-      <option>Transporte</option>
-      <option>Lazer</option>
-      <option>Outros</option>
-    </select>
-    <label>📝 Descrição:</label>
-    <input type="text" id="descricao" />
-    <label>🔢 Quantidade:</label>
-    <input type="number" id="quantidade" min="1" value="1" />
-    <label>💰 Preço Unitário (R$):</label>
-    <input type="number" id="preco" step="0.01" />
-    <button onclick="adicionarDespesa()">➕ Adicionar</button>
-    <button onclick="limparFormulario()" class="button-clear">🧹 Limpar</button>
-  </div>
+<div class="card">
+    <h2>Consulta de Produto</h2>
+    
+    <button class="btn-scan" id="btnToggle" onclick="toggleScanner()">
+        <span>📷 LER CÓDIGO (SCANNER)</span>
+    </button>
+    
+    <div id="interactive" class="viewport"></div>
 
-  <table id="tabela-despesas">
-    <thead>
-      <tr>
-        <th>Categoria</th>
-        <th>Descrição</th>
-        <th>Quantidade</th>
-        <th>Preço Unitário</th>
-        <th>Total</th>
-        <th>Ações</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-    <tfoot>
-      <tr>
-        <td colspan="4">Total Geral:</td>
-        <td id="total-geral" colspan="2">R$ 0,00</td>
-      </tr>
-    </tfoot>
-  </table>
+    <div class="search-row">
+        <input type="text" id="skuInput" placeholder="Digite a Referência..." onkeyup="if(event.key==='Enter') buscar()">
+        <button class="btn-search" onclick="buscar()">🔍</button>
+    </div>
 
-  <button onclick="exportarPDF()" class="button-export">📄 Exportar PDF</button>
-  <button onclick="exportarExcel()" class="button-export">📊 Exportar Excel</button>
+    <div id="error" class="error" style="display:none">Produto não encontrado!</div>
 
-  <script>
-    const tbody = document.querySelector('#tabela-despesas tbody');
-    const totalGeral = document.getElementById('total-geral');
+    <div id="result" class="result-box">
+        <div id="prodDesc" class="prod-title"></div>
+        <div style="font-size: 15px; color: #555;">Ref: <span id="prodRef" style="font-weight: bold; color: #000;"></span></div>
+        
+        <div class="price-area">
+            <div id="precoAntigo" class="old-price"></div>
+            <span id="precoAtual" class="new-price"></span>
+            <div id="tagDesconto" class="discount-label" style="display:none">🔥 Referencia com 50% de desconto 🔥</div>
+        </div>
+    </div>
+</div>
 
-    function formatarMoeda(valor) {
-      return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+<script>
+    // Dados baseados no seu arquivo CSV
+    const estoque = [
+        { g: "01.001", d: "MISTURADOR DE COZINHA BICA RETRATIL - BOOLEAN - AÇO ESCOVADO", b: "7898678205451", r: "LX3388NB", v: 2027.86 },
+        { g: "01.001", d: "MISTURADOR DE COZINHA BICA RETRATIL - BOOLEAN - CROMADO", b: "7898678205406", r: "LX3388", v: 1848.94 },
+        { g: "06.007", d: "CUBA CERAMICA REDONDA 36X36X12,5 - ROSE GOLD", b: "7898678205345", r: "LX524RG", v: 1007.25 },
+        { g: "06.007", d: "CUBA CERAMICA REDONDA 37X37X15,5 - BRANCA", b: "7898678204744", r: "LX025", v: 371.73 },
+        { g: "06.007", d: "CUBA CERAMICA REDONDA DUAS CORES - PRETO E ROSE GOLD", b: "7898678205987", r: "LX524BRG", v: 1088.29 }
+    ];
+
+    function formatar(v) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+
+    function buscar(codigo = null) {
+        const termo = codigo || document.getElementById('skuInput').value.trim().toUpperCase();
+        if(!termo) return;
+
+        // Pesquisa por referência ou por EAN (o EAN funciona, mas não aparece no ecrã)
+        const p = estoque.find(i => i.r.toUpperCase() === termo || i.b === termo);
+
+        if(p) {
+            if(scannerAtivo) toggleScanner(); // Fecha a câmera se encontrar o produto
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('result').style.display = 'block';
+            document.getElementById('prodDesc').innerText = p.d;
+            document.getElementById('prodRef').innerText = p.r;
+
+            let final = p.v;
+            // Regra do Grupo 06
+            if(p.g.startsWith("06")) {
+                final = p.v * 0.5;
+                document.getElementById('precoAntigo').innerText = "De: " + formatar(p.v);
+                document.getElementById('tagDesconto').style.display = 'inline-block';
+            } else {
+                document.getElementById('precoAntigo').innerText = '';
+                document.getElementById('tagDesconto').style.display = 'none';
+            }
+            document.getElementById('precoAtual').innerText = formatar(final);
+            document.getElementById('skuInput').value = ""; 
+        } else {
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('error').style.display = 'block';
+        }
     }
 
-    function limparFormulario() {
-      document.getElementById("categoria").value = "";
-      document.getElementById("descricao").value = "";
-      document.getElementById("quantidade").value = "1";
-      document.getElementById("preco").value = "";
+    let scannerAtivo = false;
+    function toggleScanner() {
+        const viewer = document.getElementById('interactive');
+        const btn = document.getElementById('btnToggle');
+        if (!scannerAtivo) {
+            viewer.style.display = 'block';
+            btn.innerHTML = "<span>❌ FECHAR CÂMERA</span>";
+            btn.style.background = "#666";
+            Quagga.init({
+                inputStream: { 
+                    name: "Live", 
+                    type: "LiveStream", 
+                    target: viewer, 
+                    constraints: { facingMode: "environment" } 
+                },
+                decoder: { readers: ["ean_reader", "code_128_reader", "upc_reader", "ean_8_reader"] }
+            }, function(err) {
+                if (err) { alert("Erro ao aceder à câmera."); return; }
+                Quagga.start();
+                scannerAtivo = true;
+            });
+            Quagga.onDetected((res) => { 
+                if(res.codeResult.code) {
+                    // Feedback tátil (vibração) se disponível no telemóvel
+                    if(navigator.vibrate) navigator.vibrate(100);
+                    buscar(res.codeResult.code); 
+                }
+            });
+        } else {
+            Quagga.stop();
+            viewer.style.display = 'none';
+            btn.innerHTML = "<span>📷 LER CÓDIGO (SCANNER)</span>";
+            btn.style.background = "#28a745";
+            scannerAtivo = false;
+        }
     }
-
-    function atualizarTotal() {
-      let total = 0;
-      document.querySelectorAll('[data-total]').forEach(el => {
-        total += parseFloat(el.dataset.total || 0);
-      });
-      totalGeral.textContent = formatarMoeda(total);
-    }
-
-    function salvarLocal() {
-      const dados = Array.from(tbody.querySelectorAll('tr')).map(tr => {
-        const tds = tr.querySelectorAll('td');
-        return {
-          categoria: tds[0].innerText,
-          descricao: tds[1].innerText,
-          quantidade: +tds[2].innerText,
-          preco: +tds[3].innerText.replace(/[^\d,]/g, '').replace(',', '.')
-        };
-      });
-      localStorage.setItem('despesas', JSON.stringify(dados));
-    }
-
-    function carregarLocal() {
-      const dados = JSON.parse(localStorage.getItem('despesas')) || [];
-      dados.forEach(d => {
-        adicionarDespesa(d.categoria, d.descricao, d.quantidade, d.preco, true);
-      });
-    }
-
-    function adicionarDespesa(categoriaVal, descricaoVal, quantidadeVal, precoVal, carregado = false) {
-      const categoria = categoriaVal ?? document.getElementById('categoria').value;
-      const descricao = descricaoVal ?? document.getElementById('descricao').value;
-      const quantidade = quantidadeVal ?? +document.getElementById('quantidade').value;
-      const preco = precoVal ?? +document.getElementById('preco').value;
-
-      if (!categoria || !descricao || quantidade <= 0 || preco <= 0) return;
-
-      const total = quantidade * preco;
-
-      const tr = document.createElement('tr');
-      tr.dataset.total = total.toFixed(2);
-      tr.innerHTML = `
-        <td>${categoria}</td>
-        <td>${descricao}</td>
-        <td>${quantidade}</td>
-        <td>${formatarMoeda(preco)}</td>
-        <td>${formatarMoeda(total)}</td>
-        <td>
-          <button onclick="editarLinha(this)">✏️</button>
-          <button onclick="removerLinha(this)">❌</button>
-        </td>
-      `;
-      tbody.appendChild(tr);
-
-      atualizarTotal();
-      if (!carregado) salvarLocal();
-    }
-
-    function editarLinha(botao) {
-      const tr = botao.closest('tr');
-      const tds = tr.querySelectorAll('td');
-      document.getElementById('categoria').value = tds[0].innerText;
-      document.getElementById('descricao').value = tds[1].innerText;
-      document.getElementById('quantidade').value = tds[2].innerText;
-      document.getElementById('preco').value = parseFloat(tds[3].innerText.replace(/[^\d,]/g, '').replace(',', '.'));
-      tr.remove();
-      atualizarTotal();
-      salvarLocal();
-    }
-
-    function removerLinha(botao) {
-      botao.closest('tr').remove();
-      atualizarTotal();
-      salvarLocal();
-    }
-
-    function exportarExcel() {
-      const wb = XLSX.utils.book_new();
-      const ws_data = [
-        ["Categoria", "Descrição", "Quantidade", "Preço Unitário", "Total"],
-        ...Array.from(tbody.querySelectorAll('tr')).map(tr =>
-          Array.from(tr.querySelectorAll('td')).slice(0, 5).map(td => td.innerText)
-        )
-      ];
-      const ws = XLSX.utils.aoa_to_sheet(ws_data);
-      XLSX.utils.book_append_sheet(wb, ws, "Despesas");
-      XLSX.writeFile(wb, "despesas.xlsx");
-    }
-
-    async function exportarPDF() {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      let y = 10;
-      doc.setFontSize(12);
-      doc.text("Controle de Despesas", 70, y);
-      y += 10;
-
-      tbody.querySelectorAll('tr').forEach(tr => {
-        const tds = Array.from(tr.querySelectorAll('td')).map(td => td.innerText);
-        doc.text(tds.slice(0, 5).join(" | "), 10, y);
-        y += 10;
-      });
-
-      doc.text("Total Geral: " + totalGeral.textContent, 10, y + 10);
-      doc.save("despesas.pdf");
-    }
-
-    document.getElementById('themeToggle').onclick = () => {
-      document.body.classList.toggle('dark-mode');
-    };
-
-    carregarLocal();
-  </script>
+</script>
 </body>
 </html>
