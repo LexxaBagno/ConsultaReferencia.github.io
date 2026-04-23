@@ -31,9 +31,9 @@
 </head>
 <body>
 <div class="card">
-    <h2>Consulta de Produto</h2>
+    <h2>Consulta - LEXXA</h2>
     <div class="field-group">
-        <label>Filtrar por Categoria (Grupo)</label>
+        <label>Filtrar por Categoria</label>
         <select id="groupSelect">
             <option value="">TODAS AS CATEGORIAS</option>
             <option value="COZINHA">COZINHA</option>
@@ -42,31 +42,30 @@
             <option value="ACESSORIOS">ACESSÓRIOS</option>
         </select>
     </div>
-    <button class="btn-scan" id="scanBtn" onclick="startScanner()">📷 SCANNER (CÓD. BARRAS)</button>
+    <button class="btn-scan" id="scanBtn" onclick="startScanner()">📷 SCANNER</button>
     <div id="reader"></div>
-    <div class="field-group">
-        <label>Referência ou Lupa para listar Grupo</label>
-        <div class="search-row">
-            <input type="text" id="skuInput" placeholder="Ex: LX3388NB" onkeyup="if(event.key==='Enter') buscar()">
-            <button class="btn-search" onclick="buscar()">🔍</button>
-        </div>
-    </div>
+    <div class="search-row">
+    <input type="text" id="skuInput" placeholder="Fale ou digite...">
+    <button class="btn-search" id="voiceBtn" style="background: #ea4335; border: none; color: white; padding: 10px; border-radius: 8px; margin-right: 5px;">🎤</button>
+    <button class="btn-search" id="searchBtn">🔍</button>
+</div>
+<script src="./script.js"></script>
     <div id="groupResults" class="group-results-list"></div>
-    <div id="error" class="error" style="display:none">Produto não encontrado!</div>
+    <div id="error" class="error" style="display:none">Não encontrado!</div>
     <div id="result" class="result-box">
         <div id="prodDesc" class="prod-title"></div>
-        <div style="margin-bottom: 10px; font-size: 14px; color: #666;">Ref: <span id="prodRef" style="font-weight:bold; color: #000;"></span></div>
+        <div style="font-size:14px; color:#666; margin-bottom:10px;">Ref: <span id="prodRef" style="color:#000"></span></div>
         <div class="price-card">
-            <span id="precoAntigo" style="text-decoration: line-through; color: #888; font-size: 14px;"></span>
+            <span id="precoAntigo" style="text-decoration:line-through; color:#888; font-size:14px;"></span>
             <span id="precoAtual" class="new-price"></span>
             <div id="tagDesconto" class="discount-badge" style="display:none"></div>
         </div>
         <div class="edit-discount">
-            <label style="margin:0; flex:1">Ajustar Desconto (%):</label>
-            <input type="number" id="manualDiscount" value="0" oninput="recalcularPreco()">
+            <label style="flex:1">Desconto %:</label>
+            <input type="number" id="manualDiscount" value="0">
         </div>
     </div>
 </div>
-<script src="script.js"></script>
+<script src="./script.js"></script>
 </body>
 </html>
